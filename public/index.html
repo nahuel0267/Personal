@@ -1,1 +1,599 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MELI Trends · Argentina</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    :root {
+      --bg: #F7F6F2;
+      --surface: #FFFFFF;
+      --surface2: #F0EEE8;
+      --border: #E2DED6;
+      --text: #1A1916;
+      --text2: #6B6860;
+      --text3: #A8A59E;
+      --yellow: #FFE234;
+      --yellow-dark: #B8A200;
+      --green: #1D9E75;
+      --green-light: #E1F5EE;
+      --red: #E24B4A;
+      --red-light: #FCEBEB;
+      --blue: #185FA5;
+      --blue-light: #E6F1FB;
+      --amber: #BA7517;
+      --amber-light: #FAEEDA;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
 
+    /* HEADER */
+    .topbar {
+      background: var(--text);
+      color: #fff;
+      padding: 0 2rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .meli-logo {
+      background: var(--yellow);
+      color: var(--text);
+      font-weight: 600;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      letter-spacing: .03em;
+    }
+    .topbar h1 {
+      font-size: 15px;
+      font-weight: 500;
+      color: #fff;
+    }
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(255,255,255,.1);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 12px;
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; }
+    .dot.loading { background: #fbbf24; animation: pulse 1s infinite; }
+    .dot.error { background: var(--red); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .last-upd { font-size: 11px; color: rgba(255,255,255,.5); }
+    .btn-refresh {
+      background: rgba(255,255,255,.12);
+      border: none;
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-refresh:hover { background: rgba(255,255,255,.2); }
+    .btn-refresh:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* LAYOUT */
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* BANNER ESTACIONAL */
+    .season-banner {
+      background: var(--text);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 1.25rem 1.75rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .season-banner h2 { font-size: 16px; font-weight: 500; }
+    .season-banner p { font-size: 13px; color: rgba(255,255,255,.65); margin-top: 3px; }
+    .season-months {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .smonth {
+      background: rgba(255,255,255,.1);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: rgba(255,255,255,.6);
+      text-align: center;
+      min-width: 38px;
+    }
+    .smonth.active {
+      background: var(--yellow);
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* METRICS */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+    }
+    .metric-card.highlight { background: var(--yellow); border-color: var(--yellow); }
+    .metric-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+    .metric-card.highlight .metric-label { color: var(--yellow-dark); }
+    .metric-value { font-size: 28px; font-weight: 300; color: var(--text); letter-spacing: -.02em; }
+    .metric-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+    .metric-card.highlight .metric-sub { color: var(--yellow-dark); }
+
+    /* GRID */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+    @media(max-width:900px){ .grid-2,.grid-3{grid-template-columns:1fr} }
+
+    /* CARDS */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+    .card-title { font-size: 13px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; }
+    .card-badge { font-size: 11px; background: var(--surface2); color: var(--text2); padding: 3px 9px; border-radius: 20px; }
+
+    /* TREND ITEMS */
+    .trend-list { display: flex; flex-direction: column; gap: 2px; }
+    .trend-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: var(--radius-sm);
+      transition: background .15s;
+    }
+    .trend-row:hover { background: var(--surface2); }
+    .trend-rank {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text3);
+      min-width: 22px;
+    }
+    .trend-keyword { font-size: 14px; color: var(--text); flex: 1; }
+    .trend-url { font-size: 11px; color: var(--blue); text-decoration: none; }
+    .trend-url:hover { text-decoration: underline; }
+    .badge {
+      font-size: 10px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .badge-hot { background: #FEF3C7; color: #92400E; }
+    .badge-up { background: var(--green-light); color: var(--green); }
+    .badge-pop { background: var(--blue-light); color: var(--blue); }
+
+    /* CATEGORY BARS */
+    .cat-list { display: flex; flex-direction: column; gap: 10px; }
+    .cat-row { display: flex; flex-direction: column; gap: 5px; }
+    .cat-header { display: flex; justify-content: space-between; align-items: center; }
+    .cat-name { font-size: 13px; color: var(--text); }
+    .cat-top { font-size: 11px; color: var(--text3); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 3px; transition: width 1.2s ease; }
+
+    /* TABS */
+    .tabs { display: flex; gap: 4px; margin-bottom: 1rem; background: var(--surface2); padding: 4px; border-radius: var(--radius-sm); }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 7px 10px;
+      font-size: 12px;
+      color: var(--text2);
+      cursor: pointer;
+      border-radius: 6px;
+      border: none;
+      background: none;
+      font-family: 'DM Sans', sans-serif;
+      transition: all .2s;
+    }
+    .tab.active { background: var(--surface); color: var(--text); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+    /* CHART */
+    .chart-wrap { position: relative; height: 260px; }
+
+    /* SKELETON */
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius-sm);
+    }
+    @keyframes shimmer { 0%{background-position:200%} 100%{background-position:-200%} }
+
+    /* FOOTER */
+    .footer { text-align: center; padding: 2rem 0 1rem; font-size: 12px; color: var(--text3); }
+    .footer a { color: var(--blue); text-decoration: none; }
+
+    /* ERROR */
+    .error-banner {
+      background: var(--red-light);
+      border: 1px solid #F7C1C1;
+      border-radius: var(--radius);
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+      font-size: 13px;
+      color: var(--red);
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <span class="meli-logo">MELI</span>
+    <h1>Trends Dashboard · Argentina</h1>
+  </div>
+  <div class="topbar-right">
+    <div class="status-pill">
+      <span class="dot loading" id="dot"></span>
+      <span id="statusText">Conectando...</span>
+    </div>
+    <span class="last-upd" id="lastUpd"></span>
+    <button class="btn-refresh" id="btnRefresh" disabled onclick="loadData()">↻ Actualizar</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="container">
+
+  <!-- BANNER ESTACIONAL -->
+  <div class="season-banner" id="seasonBanner">
+    <div>
+      <h2 id="seasonTitle">Cargando análisis estacional...</h2>
+      <p id="seasonDesc">Mercado Libre Argentina · Datos oficiales de la API</p>
+    </div>
+    <div class="season-months" id="seasonMonths">
+      <!-- Se genera dinámicamente -->
+    </div>
+  </div>
+
+  <!-- ERROR (oculto por default) -->
+  <div class="error-banner" id="errorBanner" style="display:none"></div>
+
+  <!-- MÉTRICAS -->
+  <div class="metrics" id="metricsRow">
+    <div class="metric-card"><div class="skeleton" style="height:70px"></div></div>
+    <div class="metric-card"><div class="skeleton" style="height:70px"></div></div>
+    <div class="metric-card"><div class="skeleton" style="height:70px"></div></div>
+    <div class="metric-card"><div class="skeleton" style="height:70px"></div></div>
+  </div>
+
+  <!-- TRENDS + CATEGORÍAS -->
+  <div class="grid-2" id="mainGrid">
+    <div class="card"><div class="skeleton" style="height:380px"></div></div>
+    <div class="card"><div class="skeleton" style="height:380px"></div></div>
+  </div>
+
+  <!-- CHART + TOP SEARCHES -->
+  <div class="grid-2" id="chartGrid">
+    <div class="card"><div class="skeleton" style="height:320px"></div></div>
+    <div class="card"><div class="skeleton" style="height:320px"></div></div>
+  </div>
+
+  <div class="footer">
+    Datos: <a href="https://developers.mercadolibre.com" target="_blank">Mercado Libre API oficial</a> ·
+    Tendencias actualizadas semanalmente por MELI ·
+    Dashboard actualiza cada 24hs
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURACIÓN
+// Reemplazá esta URL con tu dominio de Vercel después del deploy
+// ============================================================
+const API_BASE = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000'
+  : 'https://TU-PROYECTO.vercel.app'; // <-- CAMBIAR ESTO
+
+const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const ICONOS = ['🌞','🌊','🍂','🌧','❄️','🧥','🛍️','📚','🌱','🎃','🖤','🎄'];
+const ESTACIONES = {
+  1:'Verano',2:'Rebajas post-verano',3:'Inicio de otoño',
+  4:'Otoño',5:'Pre-invierno',6:'Invierno pleno',
+  7:'Hot Sale',8:'Vuelta al cole',9:'Primavera',
+  10:'Pre-temporada calor',11:'Cyber Monday',12:'Navidad'
+};
+
+const CAT_COLORS = [
+  '#378ADD','#1D9E75','#D85A30','#D4537E',
+  '#639922','#BA7517','#534AB7','#888780'
+];
+
+let trendsData = null;
+let activeTab = 0;
+let refreshInterval = null;
+let pieChart = null;
+
+// ========================
+// CARGA DE DATOS
+// ========================
+async function loadData() {
+  const dot = document.getElementById('dot');
+  const statusText = document.getElementById('statusText');
+  const btn = document.getElementById('btnRefresh');
+
+  dot.className = 'dot loading';
+  statusText.textContent = 'Actualizando...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/trends`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    trendsData = data;
+    document.getElementById('errorBanner').style.display = 'none';
+    renderAll(data);
+
+    dot.className = 'dot';
+    statusText.textContent = 'En vivo';
+    document.getElementById('lastUpd').textContent =
+      `Última actualización: ${new Date().toLocaleTimeString('es-AR')}`;
+  } catch (err) {
+    dot.className = 'dot error';
+    statusText.textContent = 'Error de conexión';
+    const eb = document.getElementById('errorBanner');
+    eb.style.display = 'block';
+    eb.textContent = `Error: ${err.message}. Verificá que el backend esté deployado y que las variables de entorno estén configuradas en Vercel.`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ========================
+// RENDERIZADO COMPLETO
+// ========================
+function renderAll(data) {
+  renderSeasonBanner();
+  renderMetrics(data);
+  renderMainGrid(data);
+  renderChartGrid(data);
+}
+
+function renderSeasonBanner() {
+  const now = new Date();
+  const mes = now.getMonth() + 1;
+  document.getElementById('seasonTitle').textContent =
+    `${ICONOS[mes-1]}  ${MESES[mes-1]} ${now.getFullYear()} · ${ESTACIONES[mes]}`;
+  document.getElementById('seasonDesc').textContent =
+    'Datos oficiales Mercado Libre API · Hemisferio Sur · Actualización semanal';
+
+  const html = MESES.map((m, i) =>
+    `<div class="smonth ${i+1===mes?'active':''}">${m}</div>`
+  ).join('');
+  document.getElementById('seasonMonths').innerHTML = html;
+}
+
+function renderMetrics(data) {
+  const general = data.general;
+  const totalTrends = (general.mayor_crecimiento?.length || 0)
+    + (general.mas_buscados?.length || 0)
+    + (general.mas_populares?.length || 0);
+  const catsConDatos = data.por_categoria.filter(c => c.trends?.length > 0).length;
+  const topKeyword = general.mayor_crecimiento?.[0]?.keyword || '—';
+
+  document.getElementById('metricsRow').innerHTML = `
+    <div class="metric-card highlight">
+      <div class="metric-label">Mayor crecimiento</div>
+      <div class="metric-value" style="font-size:18px;font-weight:500">${topKeyword}</div>
+      <div class="metric-sub">Búsqueda #1 en expansión</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Tendencias rastreadas</div>
+      <div class="metric-value">${totalTrends}</div>
+      <div class="metric-sub">Keywords esta semana</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Categorías activas</div>
+      <div class="metric-value">${catsConDatos}</div>
+      <div class="metric-sub">de ${data.por_categoria.length} monitoreadas</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Fuente</div>
+      <div class="metric-value" style="font-size:16px;font-weight:500">API oficial</div>
+      <div class="metric-sub">${new Date(data.metadata.timestamp).toLocaleDateString('es-AR')}</div>
+    </div>
+  `;
+}
+
+function renderMainGrid(data) {
+  const general = data.general;
+
+  // PANEL IZQUIERDO: tabs con las 3 secciones de tendencias
+  const tabs = [
+    { label: 'Mayor crecimiento', data: general.mayor_crecimiento, badge: 'badge-hot' },
+    { label: 'Más buscados', data: general.mas_buscados, badge: 'badge-up' },
+    { label: 'Más populares', data: general.mas_populares, badge: 'badge-pop' },
+  ];
+
+  function renderTabContent(idx) {
+    const t = tabs[idx];
+    const items = (t.data || []).slice(0, 15);
+    return items.map((item, i) => `
+      <div class="trend-row">
+        <span class="trend-rank">${String(i+1).padStart(2,'0')}</span>
+        <span class="trend-keyword">${item.keyword}</span>
+        <span class="badge ${t.badge}">${idx===0?'↑ Subiendo':idx===1?'Buscado':'Popular'}</span>
+        <a href="${item.url}" target="_blank" class="trend-url">ver →</a>
+      </div>
+    `).join('');
+  }
+
+  // PANEL DERECHO: tendencias por categoría con barra
+  const catHtml = data.por_categoria.map((cat, i) => {
+    const top = cat.trends?.[0]?.keyword || 'Sin datos';
+    const pct = Math.max(20, 100 - i * 10);
+    return `
+      <div class="cat-row">
+        <div class="cat-header">
+          <span class="cat-name">${cat.nombre}</span>
+          <span class="cat-top">${top}</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%;background:${CAT_COLORS[i%CAT_COLORS.length]}"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('mainGrid').innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Tendencias generales</span>
+        <span class="card-badge">Top 50 MELI</span>
+      </div>
+      <div class="tabs" id="tabsRow">
+        ${tabs.map((t,i) => `<button class="tab ${i===activeTab?'active':''}" onclick="switchTab(${i})">${t.label}</button>`).join('')}
+      </div>
+      <div class="trend-list" id="trendList">${renderTabContent(activeTab)}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Top por categoría</span>
+        <span class="card-badge">API MELI</span>
+      </div>
+      <div class="cat-list">${catHtml}</div>
+    </div>
+  `;
+
+  // Exponer función de tab al scope global
+  window.switchTab = function(idx) {
+    activeTab = idx;
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i===idx));
+    document.getElementById('trendList').innerHTML = renderTabContent(idx);
+  };
+}
+
+function renderChartGrid(data) {
+  // Pie chart: distribución de keywords por categoría
+  const catLabels = data.por_categoria.map(c => c.nombre);
+  const catData = data.por_categoria.map(c => c.trends?.length || 0);
+
+  // Tabla de top keywords de mayor crecimiento
+  const topRows = (data.general.mayor_crecimiento || []).slice(0, 10).map((item, i) => `
+    <div class="trend-row">
+      <span class="trend-rank">${String(i+1).padStart(2,'0')}</span>
+      <span class="trend-keyword">${item.keyword}</span>
+      <span class="badge badge-hot">↑ ${i < 3 ? 'Explosivo' : 'Subiendo'}</span>
+      <a href="${item.url}" target="_blank" class="trend-url">ver →</a>
+    </div>
+  `).join('');
+
+  document.getElementById('chartGrid').innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Distribución por categoría</span>
+        <span class="card-badge">Keywords activas</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="pieCanvas"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Mayor crecimiento esta semana</span>
+        <span class="card-badge">Últimas 2 semanas</span>
+      </div>
+      <div class="trend-list">${topRows}</div>
+    </div>
+  `;
+
+  // Destruir chart anterior si existe
+  if (pieChart) { pieChart.destroy(); pieChart = null; }
+
+  pieChart = new Chart(document.getElementById('pieCanvas'), {
+    type: 'doughnut',
+    data: {
+      labels: catLabels,
+      datasets: [{
+        data: catData,
+        backgroundColor: CAT_COLORS,
+        borderWidth: 2,
+        borderColor: '#fff',
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            font: { family: 'DM Sans', size: 11 },
+            padding: 10,
+            boxWidth: 12,
+          }
+        }
+      }
+    }
+  });
+}
+
+// ========================
+// INIT
+// ========================
+loadData();
+
+// Refresh automático cada 24 horas
+refreshInterval = setInterval(loadData, 24 * 60 * 60 * 1000);
+
+// Actualizar el banner estacional cada hora
+setInterval(renderSeasonBanner, 60 * 60 * 1000);
+</script>
+
+</body>
+</html>
